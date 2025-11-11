@@ -9,14 +9,34 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tailwind:init": "tailwindcss init -p"
   },
   "dependencies": {
-    "vue": "^3.5.22"
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "autoprefixer": "^10.4.21",
+    "axios": "^1.13.2",
+    "bootstrap": "^5.3.8",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "vite": "^7.1.11",
     "vite-plugin-vue-devtools": "^8.0.3"
-  }
+  },
+  "description": "This template should help get you started developing with Vue 3 in Vite.",
+  "main": "vite.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlMamunFarhad/rt-order-management-ui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlMamunFarhad/rt-order-management-ui/issues"
+  },
+  "homepage": "https://github.com/AlMamunFarhad/rt-order-management-ui#readme"
 }
