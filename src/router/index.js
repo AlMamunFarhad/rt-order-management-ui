@@ -12,6 +12,8 @@ const routes = [
   { path: '/', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/products', component: Products, meta: { requiresAuth: true } },
   { path: '/orders', component: Orders, meta: { requiresAuth: true } },
+  {path: "/products/:id", name: "product.details", component: () => import("@/views/ProductDetails.vue"), props: true, meta: { requiresAuth: true } },
+
 ]
 
 const router = createRouter({
