@@ -3,13 +3,13 @@
     <div class="login-card shadow-lg p-4 rounded-4 bg-glass w-100" style="max-width: 420px;">
       <h2 class="text-center fw-bold text-gradient mb-3">Welcome Back 👋</h2>
       <p class="text-center text-muted mb-4">Sign in to continue to your account</p>
-      <!-- General message (e.g. invalid credentials) -->
+
       <div v-if="serverMessage" class="alert alert-danger py-2 text-center">
         {{ serverMessage }}
       </div>
 
       <form @submit.prevent="submit" novalidate>
-        <!-- Email -->
+
         <div class="mb-3">
           <label class="form-label">Email</label>
           <input
@@ -23,7 +23,7 @@
           </div>
         </div>
 
-        <!-- Password -->
+   
         <div class="mb-3">
           <label class="form-label">Password</label>
           <div class="input-group">
