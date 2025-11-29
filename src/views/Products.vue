@@ -96,26 +96,23 @@
                 </td>
                 <td class="text-center">
                   <!-- pass the whole product object p (not p.id) -->
-                   <div class="d-flex mb-2 me-3 justify-content-end">
-                  <button
-                    class="btn btn-sm btn-warning me-2"
-                    @click="openEdit(p)"
-                    title="Edit Product"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    class="btn btn-sm btn-danger"
-                    @click="deleteProduct(p.id)"
-                    title="Delete Product"
-                  >
-                    🗑 Delete
-                  </button>
+                  <div class="d-flex mb-2 me-3 justify-content-end">
+                    <button
+                      class="btn btn-sm btn-warning me-2"
+                      @click="openEdit(p)"
+                      title="Edit Product"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      class="btn btn-sm btn-danger"
+                      @click="deleteProduct(p.id)"
+                      title="Delete Product"
+                    >
+                      🗑 Delete
+                    </button>
                   </div>
-                  <button
-                    class="view-details-btn"
-                    @click="goToDetails(p.id)"
-                  >
+                  <button class="view-details-btn" @click="goToDetails(p.id)">
                     <i class="fa fa-eye me-1"></i>
                     View Details
                   </button>
@@ -352,6 +349,33 @@
                     <label for="description">Description (optional)</label>
                   </div>
                 </div>
+                <div class="col-12">
+                  <div class="mb-3">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      @change="handleImage"
+                    />
+                    <div v-if="imagePreview" class="mt-2">
+                      <img
+                        :src="imagePreview"
+                        style="
+                          width: 120px;
+                          height: 120px;
+                          object-fit: cover;
+                          border-radius: 8px;
+                        "
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-link text-danger"
+                        @click="removeImage"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="mt-4 d-flex justify-content-end gap-2">
@@ -397,10 +421,13 @@ import { toast } from "vue-sonner";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
-
 // Products list
 const products = ref([]);
 const error = ref(null);
+// const file = ref(null);
+// const preview = ref(null);
+const imageFile = ref(null);
+const imagePreview = ref(null);
 
 // pagination
 const pagination = reactive({
@@ -540,36 +567,50 @@ const openAddProduct = async () => {
   if (bsModal) bsModal.show();
 };
 // --- Create / Update methods ---
+
 const submitProduct = async () => {
   submitting.value = true;
   for (const k in errors) delete errors[k];
 
   try {
-    const payload = {
-      name: form.name,
-      barcode: form.barcode,
-      description: form.description,
-      sku: form.sku,
-      purchase_price: form.purchase_price,
-      sale_price: form.sale_price,
-      quantity: form.quantity,
-      received_at: toDbDatetime(form.received_at),
-    };
+    // FormData for image upload
+    const fd = new FormData();
+
+    fd.append("name", form.name);
+    fd.append("barcode", form.barcode);
+    fd.append("description", form.description);
+    fd.append("sku", form.sku);
+    fd.append("purchase_price", form.purchase_price);
+    fd.append("sale_price", form.sale_price);
+    fd.append("quantity", form.quantity);
+    fd.append("received_at", toDbDatetime(form.received_at));
+
+    // only attach image if selected
+    if (imageFile.value) {
+      fd.append("image", imageFile.value);
+    }
 
     let res;
 
     if (isEdit.value && editId.value) {
-      // UPDATE Product
-      res = await api.put(`/products/${editId.value}`, payload);
+      // UPDATE with formData
+      res = await api.post(`/products/${editId.value}?_method=PUT`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       toast.info("✏️ Product updated successfully!");
     } else {
-      // CREATE Product
-      res = await api.post("/products/store", payload);
+      // CREATE with formData
+      res = await api.post("/products/store", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       toast.success("🎉 Product added successfully!");
     }
 
     closeModal();
     await fetchProducts();
+
   } catch (e) {
     if (e.response?.status === 422) {
       Object.assign(errors, e.response.data.errors);
@@ -578,6 +619,22 @@ const submitProduct = async () => {
     submitting.value = false;
   }
 };
+
+
+const handleImage = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  imageFile.value = file;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => imagePreview.value = ev.target.result;
+  reader.readAsDataURL(file);
+};
+
+function removeImage() {
+  imageFile.value = null;
+  imagePreview.value = null;
+}
 
 const openEdit = async (item) => {
   for (const k in errors) delete errors[k];
@@ -677,5 +734,4 @@ h2 {
 .view-details-btn:active {
   transform: scale(0.96);
 }
-
 </style>
