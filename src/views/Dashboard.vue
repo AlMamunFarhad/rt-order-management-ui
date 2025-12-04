@@ -3,6 +3,7 @@
     <nav class="navbar navbar-light bg-light">
       <div class="container-fluid">
         <router-link class="navbar-brand" to="/products">Products</router-link>
+        <router-link class="navbar-brand" to="/orders">Orders</router-link>
         <button @click="handleLogout" class="navbar-brand btn btn-light">Logout</button>
       </div>
     </nav>
