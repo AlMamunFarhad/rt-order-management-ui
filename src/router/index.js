@@ -5,14 +5,17 @@ import Dashboard from '@/views/Dashboard.vue'
 import Products from '@/views/Products.vue'
 import Orders from '@/views/Orders.vue'
 import { useAuthStore } from '@/stores/auth'
+import OrderForm from '@/views/OrderForm.vue'
 
 const routes = [
   { path: '/login', component: Login, meta: { guest: true } },
   { path: '/register', component: Register, meta: { guest: true } },
   { path: '/', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/products', component: Products, meta: { requiresAuth: true } },
-  { path: '/orders', component: Orders, meta: { requiresAuth: true } },
   {path: "/products/:id", name: "product.details", component: () => import("@/views/ProductDetails.vue"), props: true, meta: { requiresAuth: true } },
+  { path: '/orders', name: 'orders', component: Orders, meta: { requiresAuth: true } },
+  { path: '/orders/create', name: 'orders.create', component: OrderForm },
+  { path: '/orders/:id/edit', name: 'orders.edit', component: OrderForm, props: true },
 
 ]
 
