@@ -16,7 +16,7 @@ const routes = [
   { path: '/orders', name: 'orders', component: Orders, meta: { requiresAuth: true } },
   { path: '/orders/create', name: 'orders.create', component: OrderForm },
   { path: '/orders/:id/edit', name: 'orders.edit', component: OrderForm, props: true },
-
+  { path: '/view-order/:id', name: 'orders.view', component: () => import('@/views/ViewOrder.vue'), props: true },
 ]
 
 const router = createRouter({
