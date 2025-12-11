@@ -489,6 +489,7 @@ async function submit() {
 
     if (isEdit.value) {
       await orders.update(route.params.id, payload);
+      console.log("Order updated", payload);
     } else {
       await orders.create(payload);
     }

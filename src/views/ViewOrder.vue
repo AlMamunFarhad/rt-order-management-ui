@@ -1,4 +1,5 @@
 <template>
+  <div class="pt-5">
   <div class="container py-5 px-4 rounded-4 page-wrap" style="background: #fcfcfc;">
     <div class="d-flex justify-content-between align-items-start my-3 gap-3 flex-wrap">
       <div>
@@ -138,6 +139,7 @@
 
     <div v-if="!loading && !order" class="p-3 text-center text-muted">Order not found.</div>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -241,6 +243,7 @@ async function changeStatus() {
     console.error(e)
     alert("Error: " + (e.response?.data?.message || e.message))
   }
+
 }
 
 function restoreStatus() {
@@ -262,27 +265,214 @@ async function confirmDelete() {
 }
 
 function printOrder() {
-  if (!order.value) return
+  if (!order.value) return;
+
+  const ord = order.value;
+  const items = ord.products || [];
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  const itemsHtml = items.map((p, i) => {
+    const name = (p.product && (p.product.name)) || p.name || 'Unnamed product';
+    const meta = (p.product && (p.product.sku || p.product.barcode)) || '';
+    const qty = Number(p.quantity || 0);
+    const unitPriceRaw = Number(p.unit_price ?? p.unitPrice ?? p.price ?? 0);
+    const unitPrice = formatCurrency(unitPriceRaw);
+    const lineSubtotal = formatCurrency(Number(p.total_price ?? p.subtotal ?? (qty * unitPriceRaw)));
+
+    return `
+      <tr>
+        <td style="padding:10px 8px;border-bottom:1px solid #eee;">
+          <div style="font-weight:600">${escapeHtml(name)}</div>
+          <div style="font-size:0.85rem;color:#666;margin-top:4px">${escapeHtml(meta)}</div>
+        </td>
+        <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center;width:80px">${qty}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;width:120px">${unitPrice}</td>
+        <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;width:120px">${lineSubtotal}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const sub = computeSubTotal();
+  const tax = Number(ord.tax ?? 0);
+  const discount = Number(ord.discount ?? 0);
+  const total = computeTotal();
+
   const html = `
-    <html>
-      <head>
-        <title>Invoice ${order.value.invoice_number}</title>
-        <style>
-          body { font-family: Arial, Helvetica, sans-serif; padding: 20px; color: #111; }
-          pre { white-space: pre-wrap; word-wrap: break-word; }
-        </style>
-      </head>
-      <body>
-        <h2>Invoice: ${order.value.invoice_number}</h2>
-        <pre>${JSON.stringify(order.value, null, 2)}</pre>
-      </body>
-    </html>
-  `
-  const w = window.open('', '_blank')
-  w.document.write(html)
-  w.document.close()
-  w.print()
+  <!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Invoice — ${escapeHtml(ord.invoice_number ?? ord.id)}</title>
+      <style>
+        @page { size: A4; margin: 18mm; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #111; margin: 0; padding: 0; }
+        .wrap { max-width: 900px; margin: 20px auto; padding: 20px; }
+        .header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+        .brand { font-size:1.25rem; font-weight:700; color:#0d6efd; }
+        .meta { text-align:right; font-size:0.95rem; color:#444; }
+        .meta .small { color:#666; font-size:0.85rem; }
+        .bill-to { margin-top:18px; display:flex; justify-content:space-between; gap:12px; }
+        .card { background:#fff; padding:16px; border-radius:8px; box-shadow: 0 1px 0 rgba(0,0,0,0.04); }
+        table { width:100%; border-collapse:collapse; margin-top:12px; }
+        table thead th { text-align:left; padding:10px 8px; font-size:0.95rem; color:#333; border-bottom:2px solid #e9ecef; }
+        table tfoot td { padding:10px 8px; font-weight:700; border-top:2px solid #dee2e6; }
+        .notes { margin-top:18px; color:#444; font-size:0.94rem; }
+        .signature { margin-top:36px; display:flex; justify-content:space-between; gap:20px; }
+        .sig { width:40%; text-align:center; color:#555; }
+        @media print {
+          body { -webkit-print-color-adjust: exact; }
+          .no-print { display: none !important; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrap card">
+        <div class="header">
+          <div>
+            <div class="brand">Your Company</div>
+            <div style="font-size:0.95rem;color:#555;margin-top:4px">Invoice</div>
+          </div>
+          <div class="meta">
+            <div style="font-weight:700;font-size:1rem">${escapeHtml(ord.invoice_number ?? ord.id)}</div>
+            <div class="small">${escapeHtml(formatDate(ord.date_time ?? ord.created_at))}</div>
+            <div class="small" style="margin-top:6px">Status: <strong>${escapeHtml(ord.status ?? '-')}</strong></div>
+          </div>
+        </div>
+
+        <div class="bill-to" style="margin-top:14px">
+          <div style="min-width:240px">
+            <div style="font-size:0.9rem;color:#666">Bill To</div>
+            <div style="font-weight:600;margin-top:6px">${escapeHtml(ord.customer_name ?? (ord.customer?.name ?? '-'))}</div>
+            <div style="font-size:0.9rem;color:#666;margin-top:6px">${escapeHtml(ord.customer?.address ?? '')}</div>
+            <div style="font-size:0.9rem;color:#666;margin-top:4px">${escapeHtml(ord.customer?.contact ?? '')}</div>
+          </div>
+
+          <div style="min-width:240px;text-align:right">
+            <div style="font-size:0.9rem;color:#666">Totals</div>
+            <div style="margin-top:8px">Items: <strong>${items.length}</strong></div>
+            <div style="margin-top:6px">Subtotal: <strong>${escapeHtml(formatCurrency(sub))}</strong></div>
+            <div style="margin-top:6px">Tax: <strong>${escapeHtml(formatCurrency(tax))}</strong></div>
+            <div style="margin-top:6px">Discount: <strong>- ${escapeHtml(formatCurrency(discount))}</strong></div>
+            <div style="margin-top:10px;font-size:1.1rem">Total: <strong>${escapeHtml(formatCurrency(total))}</strong></div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px; overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th style="text-align:center;width:80px">Qty</th>
+                <th style="text-align:right;width:120px">Unit</th>
+                <th style="text-align:right;width:120px">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml || `<tr><td colspan="4" style="padding:12px;text-align:center;color:#777">No products</td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td></td>
+                <td></td>
+                <td style="text-align:right">Subtotal</td>
+                <td style="text-align:right">${escapeHtml(formatCurrency(sub))}</td>
+              </tr>
+              <tr>
+                <td></td><td></td>
+                <td style="text-align:right">Tax</td>
+                <td style="text-align:right">${escapeHtml(formatCurrency(tax))}</td>
+              </tr>
+              <tr>
+                <td></td><td></td>
+                <td style="text-align:right">Discount</td>
+                <td style="text-align:right">- ${escapeHtml(formatCurrency(discount))}</td>
+              </tr>
+              <tr>
+                <td></td><td></td>
+                <td style="text-align:right">Total</td>
+                <td style="text-align:right">${escapeHtml(formatCurrency(total))}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="notes">
+          <strong>Notes:</strong>
+          <div style="margin-top:6px">${escapeHtml(ord.order_notes ?? ord.notes ?? 'No notes')}</div>
+        </div>
+
+        <div class="signature">
+          <div class="sig">
+            <div style="height:60px"></div>
+            <div>______________</div>
+            <div style="margin-top:6px">Prepared by</div>
+          </div>
+          <div class="sig">
+            <div style="height:60px"></div>
+            <div>______________</div>
+            <div style="margin-top:6px">Authorized signature</div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        // close window after printing to keep things tidy (some browsers ignore)
+        window.onload = function() {
+          setTimeout(()=> {
+            window.print();
+          }, 150);
+        };
+        window.onafterprint = () => {
+          try { window.close(); } catch(e) {}
+        };
+      <\/script>
+    </body>
+  </html>
+  `;
+
+  const w = window.open('', '_blank',);
+  if (!w) {
+    alert('Unable to open print window (popup blocked). Please allow popups for this site.');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
+
+
+
+// function printOrder() {
+//   if (!order.value) return
+//   const html = `
+//     <html>
+//       <head>
+//         <title>Invoice ${order.value.invoice_number}</title>
+//         <style>
+//           body { font-family: Arial, Helvetica, sans-serif; padding: 20px; color: #111; }
+//           pre { white-space: pre-wrap; word-wrap: break-word; }
+//         </style>
+//       </head>
+//       <body>
+//         <h2>Invoice: ${order.value.invoice_number}</h2>
+//         <pre>${JSON.stringify(order.value, null, 2)}</pre>
+//       </body>
+//     </html>
+//   `
+//   const w = window.open('', '_blank')
+//   w.document.write(html)
+//   w.document.close()
+//   w.print()
+// }
 </script>
 
 <style scoped>
