@@ -149,7 +149,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api from '@/api/api'
 
 const route = useRoute()
-const router = useRouter()
+// const router = useRouter()
 const store = useOrdersStore()
 
 const order = ref(null)
@@ -449,30 +449,6 @@ function printOrder() {
   w.document.close();
 }
 
-
-
-// function printOrder() {
-//   if (!order.value) return
-//   const html = `
-//     <html>
-//       <head>
-//         <title>Invoice ${order.value.invoice_number}</title>
-//         <style>
-//           body { font-family: Arial, Helvetica, sans-serif; padding: 20px; color: #111; }
-//           pre { white-space: pre-wrap; word-wrap: break-word; }
-//         </style>
-//       </head>
-//       <body>
-//         <h2>Invoice: ${order.value.invoice_number}</h2>
-//         <pre>${JSON.stringify(order.value, null, 2)}</pre>
-//       </body>
-//     </html>
-//   `
-//   const w = window.open('', '_blank')
-//   w.document.write(html)
-//   w.document.close()
-//   w.print()
-// }
 </script>
 
 <style scoped>
